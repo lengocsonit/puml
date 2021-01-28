@@ -13,6 +13,7 @@ end box
 box "station.controllers" #Snow
     participant DiagnoserClientController as diagnoserclientcontroller
     participant DiagnoserManageController as diagnosermanagecontroller
+    participant LicenseController as licensecontroller
 end box
 
 box "diagnoser.communications" #Snow
@@ -36,6 +37,14 @@ stationserver -> stationserver: create_diagnoser()
 activate stationserver
 stationserver -> diagnoserclientcontroller: create_diagnoser()
 activate diagnoserclientcontroller
+    diagnoserclientcontroller -> licensecontroller: exist_diagnoser_available_license()
+    activate licensecontroller
+        licensecontroller --> diagnoserclientcontroller: True or False
+        deactivate licensecontroller
+        opt 有効な診断機のライセンスがない場合
+            stationserver <-- diagnoserclientcontroller: エラーコード
+        end opt
+    deactivate licensecontroller
     diagnoserclientcontroller -> diagnoserclient: <<create>>
     activate diagnoserclient
         diagnoserclient --> diagnoserclientcontroller: インスタンス

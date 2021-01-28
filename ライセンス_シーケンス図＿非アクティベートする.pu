@@ -32,9 +32,9 @@ end box
 
 activate stationserver
 activate diagnoserserver
-stationserver -> diagnoserclientcontroller: deactivate_diagnoser()
+stationserver -> diagnoserclientcontroller: delete_diagnoser()
 activate diagnoserclientcontroller
-    diagnoserclientcontroller -> diagnoserclient: deactivate_diagnoser()
+    diagnoserclientcontroller -> diagnoserclient: delete_diagnoser()
     activate diagnoserclient
     diagnoserclient -> diagnoserserver: 非アクティベートリクエストを送信(HTTPS)
     diagnoserserver -> diagnoserserver: deactivate_diagnoser()

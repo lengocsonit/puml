@@ -14,17 +14,26 @@ package backend {
             class "server" as sserver {
                 + get_analyst_license_total_count() ※有効な分析ライセンスの総数を取得する
                 + get_registered_analyst_license_count() ※割り当て済みの分析ライセンス数を取得する
+                + get_diagnoser_license_total_count()
+                + get_assigned_diagnoser_count()
                 + create_diagnoser()
                 + delete_diagnoser()
             }
 
+            class LicenseClient {
+                + activate_diagnoser()
+                + deactivate_diagnoser()
+            }
         }
         package controllers {
             class LicenseController {
                 + get_analyst_license_total_count()
                 + get_registered_analyst_license_count()
+                + get_diagnoser_license_total_count()
+                + get_assigned_diagnoser_count()
                 + check_license() ※ライセンス認証
-                + exist_available_license() ※使用可能なライセンスが存在するかチェック
+                + exist_analyst_available_license() ※使用可能なライセンスが存在するかチェック
+                + exist_diagnoser_available_license()
             }
             
             class DiagnoserClientController {
@@ -98,6 +107,7 @@ package backend {
             DiagnoserManageController ..> DiagnoserMapper: <<use>>
             DiagnoserMapper ..> Diagnoser: <<use>>
             dserver ..> CertificateController: <<use>>
+            DiagnoserManageController ..> LicenseClient: <<use>>
 
         }
 
