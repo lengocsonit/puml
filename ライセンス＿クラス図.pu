@@ -1,0 +1,123 @@
+
+
+@startuml ライセンス対応
+
+
+
+left to right direction 
+
+hide empty members
+
+package backend {
+    package "station" as stationBE {
+        package "communications" as stationCom {
+            class "server" as sserver {
+                + get_analyst_license_total_count() ※有効な分析ライセンスの総数を取得する
+                + get_registered_analyst_license_count() ※割り当て済みの分析ライセンス数を取得する
+                + create_diagnoser()
+                + delete_diagnoser()
+            }
+
+        }
+        package controllers {
+            class LicenseController {
+                + get_analyst_license_total_count()
+                + get_registered_analyst_license_count()
+                + check_license() ※ライセンス認証
+                + exist_available_license() ※使用可能なライセンスが存在するかチェック
+            }
+            
+            class DiagnoserClientController {
+                + {static} delete_diagnoser()
+                + {static} create_diagnoser()
+            }
+
+            class DiagnoserManageController {
+                + {static} delete_diagnoser()
+                + {static} create_diagnoser()
+            }
+        }
+    }
+
+    package "diagnoser" as diagnoserBE {
+        package "communications" as diagnoserCom {
+            class "server" as dserver {
+                + startup_event()
+                + activate_diagnoser()
+                + deactivate_diagnoser()
+            }
+        }
+
+        package "controllers" as diagnoserCon {
+            class DiagnoserController {
+                + {static} is_activated() ※アクティベートされるか確認
+                + {static} activate_diagnoser() ※アクティベート化する
+                + {static} deactivate_diagnoser() ※非アクティベート化する
+            }
+        }
+
+        dserver ..> DiagnoserController: <<use>>
+    }
+
+    package "common" as commonBE {
+        package "controllers" as controllerCommon {
+            class CertificateController {
+                + {static} confirm_certificate()
+                + {static} save_certificate()
+                + {static} delete_certificate()
+            }
+        }
+        package data_accesses {
+            package license {
+                class LicenseReader {
+                    + {static} get_rda2_analyst_license_info() ※License Manageの機能を利用
+                }
+            }
+
+            package rdb {
+                class DiagnoserMapper {
+                    + get_diagnoser()
+                    + update_diagnoser()
+                    + delete_diagnoser()
+                }
+
+                package models {
+                    class Diagnoser {
+                        int diagnoser_id
+                        string name
+                        datetime updated_time
+                        datetime created_time
+                        string comment
+                        bool is_activated ※アクティベート状態を保持
+                        string computer_id ※パソコンのUUID
+                    }
+
+                }
+            }
+            DiagnoserController ..> DiagnoserMapper: <<use>>
+            DiagnoserManageController ..> DiagnoserMapper: <<use>>
+            DiagnoserMapper ..> Diagnoser: <<use>>
+            dserver ..> CertificateController: <<use>>
+
+        }
+
+    }
+
+    sserver ..> LicenseController: <<use>>
+    sserver ..> DiagnoserClientController: <<use>>
+    DiagnoserClientController ..> DiagnoserManageController: <<use>>
+    LicenseController ..> LicenseReader: <<use>>
+}
+
+
+
+package frontend {
+    package apiClients {
+        package "station" as statinFE {
+            class FastAPIClient {
+                + {static} get_analyst_license_total_count()
+                + {static} get_registered_analyst_license_count()
+        }
+    }
+}
+@enduml
