@@ -1,0 +1,101 @@
+
+@startuml 診断機をアクティベートにする
+box "station.communications" #Snow
+    participant server as stationserver
+    participant DiagnoserClient as diagnoserclient
+end box
+
+box "station.controllers" #Snow
+    participant DiagnoserClientController as diagnoserclientcontroller
+    participant DiagnoserManageController as diagnosermanagecontroller
+end box
+
+box "diagnoser.communications" #Snow
+    participant server as diagnoserserver
+end box
+
+
+box "diagnoser.controllers" #Snow
+    participant DiagnoserController as diagnosercontroller
+    participant TaskController as taskcontroller
+    participant DataStreamController as datastreamcontroller
+    participant EventLogController as eventlogcontroller
+end box
+
+box "common.controllers"
+    participant "CertificateController" as certificatecontroller
+end box
+
+box "common.data_accesses.rdb"
+    participant DiagnoserMapper as diagnosermapper
+end box
+
+activate stationserver
+activate diagnoserserver
+stationserver -> diagnoserclientcontroller: deactivate_diagnoser()
+activate diagnoserclientcontroller
+    diagnoserclientcontroller -> diagnoserclient: deactivate_diagnoser()
+    activate diagnoserclient
+    diagnoserclient -> diagnoserserver: 非アクティベートリクエストを送信(HTTPS)
+    diagnoserserver -> diagnoserserver: deactivate_diagnoser()
+    activate diagnoserserver
+    ref over diagnoserserver
+        SSL証明書認証(ライブラリ利用)
+    end ref
+    opt SSL証明書が認証できない場合 
+        diagnoserclient <-- diagnoserserver: コード:300,リクエスト拒否
+    end
+    diagnoserserver -> diagnosercontroller: deactivate_diagnoser(証明書)
+    activate diagnosercontroller
+    diagnosercontroller -> diagnosercontroller: is_activated() ※アクティベート状態であるかチェック∂
+    activate diagnosercontroller
+    opt 既に非アクティベート状態である場合
+        diagnoserserver <-- diagnosercontroller: コード300(T.B.D)を返却
+        diagnoserclient <-- diagnoserserver: コード300(T.B.D)を返却
+    end opt
+    diagnosercontroller  -> taskcontroller: delete_all_tasks()
+    activate taskcontroller
+        diagnosercontroller <-- taskcontroller:
+    deactivate taskcontroller
+
+    diagnosercontroller -> datastreamcontroller: delete_all_data_streams()
+    activate datastreamcontroller
+        diagnosercontroller <-- datastreamcontroller:
+    deactivate datastreamcontroller
+
+    diagnosercontroller -> eventlogcontroller: delete_all_event_logs()
+    activate eventlogcontroller
+        diagnosercontroller <-- eventlogcontroller:
+    deactivate eventlogcontroller
+
+    diagnosercontroller -> certificatecontroller: delete_certificate()
+    activate certificatecontroller
+        diagnosercontroller <-- certificatecontroller:
+    deactivate certificatecontroller
+
+    diagnosercontroller -> diagnosermapper: update_diagnoser(is_activated=False)
+    activate diagnosermapper
+    diagnosercontroller <-- diagnosermapper:
+    deactivate diagnosermapper
+    alt 例外が発生する場合
+        diagnoserserver <-- diagnosercontroller: エラーコード
+    else それ以外
+        diagnoserserver <-- diagnosercontroller: SUCCESS
+    end alt
+    deactivate diagnosercontroller
+    diagnoserclient <-- diagnoserserver: 実行結果
+    deactivate diagnoserserver
+    diagnoserclient --> diagnoserclientcontroller: 実行結果
+    alt 実行結果に失敗した場合
+    ref over diagnoserclientcontroller
+        イベントログ作成
+    end ref
+    stationserver <-- diagnoserclientcontroller: return False
+    else それ以外
+        ref over diagnoserclientcontroller
+            診断機を削除する
+        end ref
+    stationserver <-- diagnoserclientcontroller: return True
+    end
+@enduml
+

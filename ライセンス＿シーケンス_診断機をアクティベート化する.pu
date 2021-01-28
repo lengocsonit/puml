@@ -1,0 +1,223 @@
+
+@startuml 診断機をアクティベートにする
+
+
+
+
+
+box "station.communications" #Snow
+    participant server as stationserver
+
+    participant DiagnoserClient as diagnoserclient
+
+end box
+
+
+
+box "common.controllers"
+
+    participant CertificateController as certificatecontroller
+
+end box
+
+
+
+box "station.controllers" #Snow
+
+    participant DiagnoserClientController as diagnoserclientcontroller
+
+    participant DiagnoserManageController as diagnosermanagecontroller
+
+end box
+
+
+
+box "diagnoser.communications" #Snow
+
+    participant server as diagnoserserver
+
+end box
+
+
+
+box "diagnoser.controllers" #Snow
+
+    participant DiagnoserController as diagnosercontroller
+
+end box
+
+
+
+box "common.controllers"
+
+    participant "CertificateController" as certificatecontroller2
+
+end box
+
+
+
+box "common.data_accesses.rdb"
+
+    participant DiagnoserMapper as diagnosermapper
+
+end box
+
+
+
+activate stationserver
+
+activate diagnoserserver
+
+stationserver -> diagnoserclientcontroller: activate_diagnoser()
+
+activate diagnoserclientcontroller
+
+    diagnoserclientcontroller -> diagnoserclient: <<create>>
+
+    activate diagnoserclient
+
+        diagnoserclient --> diagnoserclientcontroller: インスタンス
+
+    diagnoserclientcontroller -> diagnoserclient: activate_diagnoser()
+
+    diagnoserclient -> diagnoserserver: 証明書付きアクティベートリクエストを送信
+
+    diagnoserserver -> diagnoserserver: activate_diagnoser(証明書)
+
+    activate diagnoserserver
+
+    diagnoserserver -> diagnosercontroller: activate_diagnoser(証明書)
+
+    activate diagnosercontroller
+
+    diagnosercontroller -> diagnosercontroller: is_activated() ※アクティベート状態であるかチェック
+
+    activate diagnosercontroller
+
+    deactivate diagnosercontroller
+
+    opt 既にアクティベート状態である場合
+
+        diagnoserserver <-- diagnosercontroller: コード300(T.B.D)を返却
+
+        diagnoserclient <-- diagnoserserver: コード300(T.B.D)を返却
+
+    end opt
+
+
+
+
+
+diagnosercontroller -> certificatecontroller: confirm_certificate(証明書,学習サーバアドレス,UUID確認フラグ)
+
+activate certificatecontroller
+
+certificatecontroller -> certificatecontroller: 持っている証明書と比較
+
+opt 証明書が合っていない場合
+
+    certificatecontroller -> certificatecontroller: return False
+
+end opt
+
+certificatecontroller -> certificatecontroller: 証明書から公開鍵を取得する
+
+certificatecontroller -> certificatecontroller: 乱数を作成する
+
+certificatecontroller -> certificatecontroller: encode(乱数, 公開鍵, RDA2専用共有鍵)
+
+activate certificatecontroller
+
+    certificatecontroller <-- certificatecontroller: 暗号化乱数
+
+deactivate certificatecontroller
+
+certificatecontroller -> stationserver: 暗号化乱数を送信リクエスト
+
+stationserver -> stationserver: get_answer(暗号化乱数)
+
+activate stationserver
+
+    stationserver -> certificatecontroller2: decode(暗号化乱数,秘密鍵,RDA2専用共有鍵)
+
+activate certificatecontroller2
+
+    stationserver <-- certificatecontroller2: 乱数
+
+deactivate certificatecontroller2
+
+stationserver -> stationserver: 乱数をハッシュする
+
+certificatecontroller <-- stationserver: ハッシュ乱数
+
+deactivate stationserver
+
+certificatecontroller -> certificatecontroller: 生成した乱数乱数と受けた乱数を比較
+
+certificatecontroller -> diagnosercontroller: 比較結果
+
+opt 結果がTrueである場合、証明書を保存する
+
+diagnosercontroller -> certificatecontroller: save_certificate()
+
+certificatecontroller --> diagnosercontroller:
+deactivate certificatecontroller
+
+diagnosercontroller -> diagnosermapper: update_diagnoser()
+
+activate diagnosermapper
+
+diagnosercontroller <-- diagnosermapper: 
+
+deactivate diagnosermapper
+
+deactivate certificatecontroller
+
+end opt
+
+
+
+diagnoserserver <-- diagnosercontroller: 結果
+
+deactivate diagnosercontroller
+
+
+
+alt 証明書認証できた場合、かつ例外が発生しない場合
+
+    diagnoserclient <-- : コード200, パソコンのUUID
+
+else それ以外
+
+    diagnoserclient <-- diagnoserserver: コード300(T.B.D)
+
+    deactivate diagnoserserver
+
+end alt
+
+
+
+
+
+diagnoserclient --> diagnoserclientcontroller: 結果
+
+opt 結果がSUCCESSである場合
+
+    diagnoserclientcontroller -> diagnosermanagecontroller: create_diagnoser()
+
+    activate diagnosermanagecontroller
+
+    diagnoserclientcontroller <- diagnosermanagecontroller: 結果
+
+    deactivate diagnosermanagecontroller
+
+end
+
+
+
+stationserver <-- diagnoserclientcontroller: 結果
+
+
+
+@enduml
+
