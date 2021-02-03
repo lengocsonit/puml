@@ -1,0 +1,160 @@
+@startuml 04_メインバー_サイドバー_クラス図
+left to right direction
+hide empty members
+package  frontend {
+    package apiClients {
+        package "diagnoser" as apidiagnoser {
+            class "RestAPIClient" as rapiclient { 
+            }
+        }
+        package "station" as apistation {
+            class "RestAPIClient" as sapiclient
+        }
+        class APIClient {
+            + get()
+            + post()
+            + put()
+            + delete()
+        }
+        APIClient <|-- sapiclient
+        APIClient <|-- rapiclient
+    }
+    package components {
+        package "diagnoser" as componentdiagnoser {
+            package Navigator {
+                class "MainBar" as rmainbar
+                class "SideBar" as rsidebar
+            }
+            class "Layout" as rlayout
+            rlayout ..> Navigator: <<use>>
+        }
+        package "station" as componentstation { 
+            class "Layout" as slayout
+            package UserManagePage {
+                class UserManagePage
+                class CreateUserDialog
+                class EditUserDialog
+                UserManagePage ..> CreateUserDialog: <<use>>
+                UserManagePage ..> EditUserDialog: <<use>>
+            }
+            package DiagnoserManagePage {
+                class DiagnoserManagePage
+                class SearchDiagnoserDialog
+                class CreateDiagnoserDialog
+                class EditDiagnoserDialog
+                DiagnoserManagePage ..> SearchDiagnoserDialog: <<use>>
+                DiagnoserManagePage ..> CreateDiagnoserDialog: <<use>>
+                DiagnoserManagePage ..> EditDiagnoserDialog: <<use>>
+
+            }
+            package ProjectManagePage {
+                class ProjectManagePage
+                class ExportProjectSettingDialog
+                class AccessProjectMemeberSettingDialog
+                class CreateProejctDialog
+                class EditProjectDialog
+                ProjectManagePage ..> ExportProjectSettingDialog: <<use>>
+                ProjectManagePage ..> AccessProjectMemeberSettingDialog: <<use>>
+                ProjectManagePage ..> CreateProejctDialog: <<use>>
+                ProjectManagePage ..> EditProjectDialog: <<use>>
+            }
+
+            package SigninManagePage {
+                class SigninPage
+                class SignupPage
+            }
+
+            package AIManagePage {
+                class AIManagePage
+            }
+
+            package DatasetManagePage {
+                class DatasetManagePage
+                class DatasetProcessingPage
+                class PreviewPage
+                DatasetManagePage ..> DatasetProcessingPage: <<use>>
+                DatasetManagePage ..> PreviewPage: <<use>>
+            }
+
+            package "Navigator" as snavigator {
+                class "MainBar" as smainbar
+                class "SideBar" as ssidebar
+            }
+
+
+
+            slayout ..> snavigator: <<use>>
+            slayout ..> UserManagePage: <<use>>
+            slayout ..> DiagnoserManagePage: <<use>>
+            slayout ..> ProjectManagePage: <<use>>
+            slayout ..> DatasetManagePage: <<use>>
+        }
+        package "common" as componentcommon {
+            package EventLogPage {
+                class EventLogPage
+            }
+            package HomePage {
+                class HomePage
+                class Widget
+                HomePage ..> Widget: <<use>>
+            }
+            package TaskDiagnosticPage {
+                class TaskDiagnosticPage
+            }
+
+            package TaskManagePage {
+                class TaskManagePage
+            }
+
+            package DataStreamSettingPage {
+                class DataStreamSettingPage
+            }
+
+            package Templates {
+                class DataGridTemplate
+                class BreadcrumbTemplate
+            }
+
+            rlayout ..> EventLogPage: <<use>>
+            rlayout ..> HomePage: <<use>>
+            rlayout ..> TaskDiagnosticPage: <<use>>
+            rlayout ..> DataStreamSettingPage: <<use>>
+            slayout ..> EventLogPage: <<use>>
+            slayout ..> TaskManagePage: <<use>>
+            rlayout ..> TaskManagePage: <<use>>
+            slayout ..> HomePage: <<use>>
+            slayout ..> TaskDiagnosticPage: <<use>>
+            slayout ..> DataStreamSettingPage: <<use>>
+            slayout ..> AIManagePage: <<use>>
+        }
+    }
+
+
+    package stores {
+        note "画面ごとにステート作成するため、conponent構成のように作成する" as N2
+    }
+
+    package Routes {
+        package "diagnoser" as rroutes {
+            class "Routes" as rroutes
+            rroutes ..> rlayout: <<use>>
+            
+        }
+        package "station" as sroutes {
+            class "Routes" as sroutes
+            sroutes ..> slayout: <<use>>
+            sroutes ..> SigninPage: <<use>>
+            sroutes ..> SignupPage: <<use>>
+        }
+    }
+
+    components ..> stores: <<use>>
+    components ..> apiClients: <<use>>
+    SigninManagePage .[hidden]d. Navigator
+
+}
+
+
+
+@enduml
+

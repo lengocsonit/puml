@@ -1,0 +1,220 @@
+
+@startuml　バックエンドの全体像
+
+
+
+hide members
+
+
+
+package backend {
+
+    package station {
+
+        package "communications" as scom { 
+
+            class "Server" as sserver {
+
+
+
+            }
+
+            class DiagnoserClient {
+
+
+
+            }
+
+        }
+
+
+
+        package "controllers" as scontroller {
+
+            class ProjectManageController
+
+            class DatasetManageController
+
+            class AIManageController
+
+            class DiagramManageController
+
+            class BlockManageController
+
+            class TaskManageCommandController
+
+            class DataStreamCommandController
+
+            class DiagnoserManageController
+
+            class UserManageController
+
+        }
+
+
+
+        package machine_learning {
+
+            package learning {
+
+                class CustomeAI
+
+                class AutoML
+
+            }
+
+            class Visualizer
+
+        }
+
+    }
+
+    package common {
+
+        package "controllers" as ccontroller {
+
+            class HomeController
+
+            class EventLogController
+
+            class CertificateController
+
+        }
+
+
+
+        package "data_accesses" as cdata_access {
+
+            package licenses {
+
+                class LicenseManage
+
+            }
+
+
+
+            package rdb { 
+
+                class ProjectMapper
+
+                class DiagnoserMapper
+
+                class HomeMapper
+
+                class UserMapper
+
+                class DataStreamMapper
+
+                class TaskMapper
+
+                class AIMapper
+
+                class DiagramMapper
+
+                class EventLogMapper
+
+                class DataStreamMapper
+
+                class BlockMapper
+
+            }
+
+
+
+            package parameter {
+
+                class BlockParameterReaderWriter
+
+                class AIModelReaderWriter
+
+                class DatasetReaderWriter
+
+            }
+
+        }
+
+        
+
+    }
+
+
+
+    package diagnoser {
+
+        package "communications" as rcom { 
+
+            class "Server" as rserver
+
+            class DataStreamClient
+
+            class StationCient
+
+        }
+
+
+
+        package "controllers" as rcontroller {
+
+            class TaskManageController
+
+            class DataStreamManageController
+
+        }
+
+
+
+        package "tasks" as rtasks {
+
+            class Task
+
+        }
+
+    }
+
+    sserver ...d> scontroller: <<use>>
+
+    sserver ...> ccontroller: <<use>>
+
+    sserver .[hidden]ri. common
+
+    DatasetManageController ...d> Visualizer: <<use>>
+
+    AIManageController ...d> machine_learning: <<use>>
+
+    machine_learning ...> cdata_access: <<use>>
+
+    ccontroller ...u> cdata_access: <<use>>
+
+    scontroller ...u> cdata_access: <<use>>
+
+    TaskManageCommandController ...ri> DiagnoserClient: <<use>>
+
+    DiagnoserManageController ...u> DiagnoserClient: <<use>>
+
+    DataStreamCommandController ...u> DiagnoserClient: <<use>>
+
+    DataStreamCommandController.[hidden]ri. AIManageController
+
+    DiagnoserManageController.[hidden]ri. AIManageController
+
+    station .[hidden]ri. common
+
+    common .[hidden]ri. diagnoser
+
+    rserver ..> rcontroller: <<use>>
+
+    rserver ...u> ccontroller: <<use>>
+
+    rcontroller ...u> cdata_access: <<use>>
+
+    rcontroller .[hidden]ri. cdata_access
+
+    rserver .[hidden]ri. StationCient
+    DataStreamManageController ..> DataStreamClient: <<use>>
+    TaskManageController ...d> Task: <<use>>
+    Task ..> cdata_access: <<use>>
+    DiagnoserClient .. rserver
+    StationCient .. sserver
+    EventLogController ...> StationCient: <<use>>
+}
+@enduml
